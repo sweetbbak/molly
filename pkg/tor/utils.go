@@ -1,6 +1,7 @@
 package tor
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/anacrolix/torrent"
@@ -28,6 +29,33 @@ func GetLargestFile(t *torrent.Torrent) *torrent.File {
 		}
 	}
 	return target
+}
+
+// TODO: add a way to visualize what pieces have been downloaded like the old torrent clients
+// [||||||||||||] where the missing pieces are greyed out, bad pieces are red and good pieces are green
+func Visuals(t *torrent.Torrent) {
+	info := t.Info()
+	fmt.Println(info)
+
+	plen := info.PieceLength
+	fmt.Printf("piece length: %d\n", plen)
+
+	pcount := info.NumPieces()
+	fmt.Printf("piece count: %d\n", pcount)
+
+	pieces := info.Pieces
+
+	for _, p := range pieces {
+		fmt.Println(string(p))
+	}
+
+	runs := t.PieceStateRuns()
+	for _, f := range runs {
+		fmt.Println(f.PieceState.Partial)
+	}
+
+	files := info.Files
+	fmt.Println(files)
 }
 
 // returns a seed ratio compared to the entire torrent
