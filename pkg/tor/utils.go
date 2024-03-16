@@ -1,7 +1,6 @@
 package tor
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/anacrolix/torrent"
@@ -33,29 +32,35 @@ func GetLargestFile(t *torrent.Torrent) *torrent.File {
 
 // TODO: add a way to visualize what pieces have been downloaded like the old torrent clients
 // [||||||||||||] where the missing pieces are greyed out, bad pieces are red and good pieces are green
-func Visuals(t *torrent.Torrent) {
-	info := t.Info()
-	fmt.Println(info)
+func Veri(t *torrent.Torrent) string {
+	var sb strings.Builder
+	var (
+		gween  = "\x1b[32m|"
+		yellow = "\x1b[34m|"
+		blue   = "\x1b[33m|"
+		clear  = "\x1b[0m"
+	)
 
-	plen := info.PieceLength
-	fmt.Printf("piece length: %d\n", plen)
+	for i := int(0); i < t.NumPieces(); i++ {
+		p := t.Piece(i)
+		// pi := p.Info()
+		// idx := pi.Index()
+		state := p.State()
 
-	pcount := info.NumPieces()
-	fmt.Printf("piece count: %d\n", pcount)
+		if state.Complete {
+			sb.WriteString(gween)
+			sb.WriteString(clear)
+		} else if state.Partial {
+			sb.WriteString(yellow)
+			sb.WriteString(clear)
+		} else {
+			sb.WriteString(blue)
+			sb.WriteString(clear)
+		}
 
-	pieces := info.Pieces
-
-	for _, p := range pieces {
-		fmt.Println(string(p))
+		// t.Piece(i).VerifyData()
 	}
-
-	runs := t.PieceStateRuns()
-	for _, f := range runs {
-		fmt.Println(f.PieceState.Partial)
-	}
-
-	files := info.Files
-	fmt.Println(files)
+	return sb.String()
 }
 
 // returns a seed ratio compared to the entire torrent

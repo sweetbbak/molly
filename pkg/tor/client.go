@@ -26,7 +26,7 @@ type Client struct {
 	// client
 	TorrentClient *torrent.Client
 	// slice of torrents
-	Torrents []*torrent.Torrent
+	// Torrents []*torrent.Torrent
 	// use IPV4
 	DisableIPV6 bool
 }
@@ -38,14 +38,33 @@ func NewClient() *Client {
 
 // Initialize the torrent client with sensible defaults
 func NewDefaultClient() *Client {
-	return &Client{}
+	return &Client{
+		DisableIPV6: false,
+	}
 }
 
-func (c *Client) NewSession() {
+func (c *Client) NewSession() error {
 	cfg := torrent.NewDefaultClientConfig()
+
+	var err error
+	c.DataDir, err = c.getStorage()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(c)
 	cfg.DisableIPv6 = c.DisableIPV6
+
 	// cfg.SetListenAddr("localhost:42099")
-	cfg.DefaultStorage = storage.NewFileByInfoHash("")
+	cfg.DefaultStorage = storage.NewFileByInfoHash(c.DataDir)
+
+	client, err := torrent.NewClient(cfg)
+	if err != nil {
+		return fmt.Errorf("error creating a new torrent client: %v", err)
+	}
+
+	c.TorrentClient = client
+	return nil
 }
 
 // returns a slice of loaded torrents or nil
