@@ -37,14 +37,12 @@ func Veri(t *torrent.Torrent) string {
 	var (
 		gween  = "\x1b[32m|"
 		yellow = "\x1b[34m|"
-		blue   = "\x1b[33m|"
+		blue   = "\x1b[33m|" // these are opposite
 		clear  = "\x1b[0m"
 	)
 
 	for i := int(0); i < t.NumPieces(); i++ {
 		p := t.Piece(i)
-		// pi := p.Info()
-		// idx := pi.Index()
 		state := p.State()
 
 		if state.Complete {

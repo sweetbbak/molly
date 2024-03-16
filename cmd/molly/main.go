@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
+	// "time"
 
 	"molly/pkg/tor"
 )
@@ -24,13 +24,14 @@ func molly() error {
 	}
 
 	t.DownloadAll()
+	fmt.Println(t.NumPieces())
 
-	for !t.Complete.Bool() {
-		vv := tor.Veri(t)
-		// fmt.Print("\x1b[2K\r")
-		fmt.Printf("pieces [%s]\n", vv)
-		time.Sleep(time.Millisecond * 99)
-	}
+	// for !t.Complete.Bool() {
+	// 	vv := tor.Veri(t)
+	// 	fmt.Print("\x1b[2K\r")
+	// 	fmt.Printf("pieces [%s]\n", vv)
+	// 	time.Sleep(time.Millisecond * 99)
+	// }
 	return nil
 }
 
