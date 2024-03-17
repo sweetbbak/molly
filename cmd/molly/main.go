@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	// "time"
+	"time"
 
+	"molly/pkg/pbar"
 	"molly/pkg/tor"
 )
 
@@ -24,14 +25,20 @@ func molly() error {
 	}
 
 	t.DownloadAll()
-	fmt.Println(t.NumPieces())
+	// 1465 or 4262 or 945
+	for !t.Complete.Bool() {
+		// vv := tor.Veri(t)
+		p := pbar.PieceBar2(t)
+		println("\x1b[2J\x1b[H")
+		fmt.Printf("\n%s\n", p)
 
-	// for !t.Complete.Bool() {
-	// 	vv := tor.Veri(t)
-	// 	fmt.Print("\x1b[2K\r")
-	// 	fmt.Printf("pieces [%s]\n", vv)
-	// 	time.Sleep(time.Millisecond * 99)
-	// }
+		r := tor.TorrentRatio(t)
+		pr := tor.TorrentPercentage(t)
+		rd := tor.TorrentRatioFromDownload(t)
+
+		fmt.Printf("\n\nration [ %f ] (%f) (%f)\n", r, pr, rd)
+		time.Sleep(time.Millisecond * 99)
+	}
 	return nil
 }
 

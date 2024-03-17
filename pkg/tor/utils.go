@@ -1,19 +1,60 @@
 package tor
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/anacrolix/torrent"
+	"github.com/dustin/go-humanize"
 )
 
-func escapeUrl(u string) string {
-	u = strings.ReplaceAll(u, "'", "")
-	u = strings.ReplaceAll(u, "\n", "")
-	u = strings.ReplaceAll(u, " ", "_")
-	u = strings.ReplaceAll(u, "_-_", "_")
-	u = strings.ReplaceAll(u, "__", "_")
-	u = strings.ReplaceAll(u, "--", "-")
-	return u
+// Download retrieves the download information for a torrent and
+// returns it as a string.
+func Downloaded(t *torrent.Torrent, showPercent bool) string {
+	var (
+		done    = t.BytesCompleted()
+		total   = t.Length()
+		percent = float64(done) / float64(total) * 100
+
+		tail string
+	)
+
+	if showPercent {
+		tail = fmt.Sprintf(" (%d%%)", uint64(percent))
+	}
+
+	return fmt.Sprintf(
+		"%s/%s%s ↓",
+		humanize.Bytes(uint64(done)),
+		humanize.Bytes(uint64(total)),
+		tail,
+	)
+}
+
+// Peers retrieves the peer information for a torrent and returns it as
+// a string.
+func Peers(t *torrent.Torrent) string {
+	stats := t.Stats()
+
+	return fmt.Sprintf(
+		"%d/%d peers",
+		stats.ActivePeers,
+		stats.TotalPeers,
+	)
+}
+
+// Upload retrieves the amount of data seeded for a torrent and returns
+// it as a string.
+func Upload(t *torrent.Torrent) string {
+	var (
+		stats  = t.Stats()
+		upload = stats.BytesWritten.Int64()
+	)
+
+	return fmt.Sprintf(
+		"%s ↑",
+		humanize.Bytes(uint64(upload)),
+	)
 }
 
 // Get largest file inside of a Torrent

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/anacrolix/torrent"
@@ -132,6 +133,32 @@ func (c *Client) AddTorrentURL(url string) (*torrent.Torrent, error) {
 	}
 	<-t.GotInfo()
 	return t, nil
+}
+
+// add multiple torrents from DIR
+func (c *Client) AddTorrentsFromDir(dir string) ([]*torrent.Torrent, error) {
+	_, err := os.Stat(dir)
+	if err != nil {
+		return nil, fmt.Errorf("directory [%s] stat error: %v", err)
+	}
+	dir = fmt.Sprintf("%s/*.torrent", dir)
+
+	matches, err := filepath.Glob(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var ts []*torrent.Torrent
+
+	for _, tf := range matches {
+		t, err := c.TorrentClient.AddTorrentFromFile(tf)
+		if err != nil {
+			return nil, err
+		}
+		<-t.GotInfo()
+		ts = append(ts, t)
+	}
+	return ts, nil
 }
 
 // stops the client and closes all connections to peers
