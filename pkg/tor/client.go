@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
 )
 
@@ -68,6 +69,109 @@ func (c *Client) NewSession() error {
 	return nil
 }
 
+// stop a torrent with a given infohash
+func (c *Client) StopTorrent(infohash metainfo.Hash) error {
+	t, ok := c.TorrentClient.Torrent(infohash)
+	if !ok {
+		return fmt.Errorf("error finding torrent with infohash [%s]", t.InfoHash().AsString())
+	}
+	if t.Info() != nil {
+		t.CancelPieces(0, t.NumPieces())
+	} else {
+		return fmt.Errorf("torrent cannot be stopped, missing torrent metainfo for infohash [%s]", t.InfoHash().AsString())
+	}
+	return nil
+}
+
+// Add trackers to a specific torrent
+func (c *Client) AddTrackers(infohash metainfo.Hash, announcelist [][]string) error {
+	t, ok := c.TorrentClient.Torrent(infohash)
+	if !ok {
+		return fmt.Errorf("torrent cannot be stopped, missing torrent metainfo for infohash [%s]", t.InfoHash().AsString())
+	}
+
+	t.AddTrackers(announcelist)
+	return nil
+}
+
+// stop all torrents that have seeded to the given ratio
+func (c *Client) StopOnRatio(seedRatio float64) {
+	ts := c.TorrentClient.Torrents()
+	for _, t := range ts {
+		if t == nil {
+			continue
+		}
+		if t.Info() == nil {
+			continue
+		}
+		stats := t.Stats()
+		seedratio := float64(stats.BytesWrittenData.Int64()) / float64(stats.BytesReadData.Int64())
+		if seedratio >= seedRatio {
+			c.StopTorrent(t.InfoHash())
+		}
+	}
+}
+
+// start a specific file download
+func (c *Client) StartFile(infohash metainfo.Hash, fp string) error {
+	fp = filepath.ToSlash(fp)
+	if fp == "" {
+		return fmt.Errorf("Path cannot be empty")
+	}
+
+	t, ok := c.TorrentClient.Torrent(infohash)
+	if !ok {
+		return fmt.Errorf("error finding torrent with infohash [%s]", t.InfoHash().AsString())
+	}
+
+	var f *torrent.File
+	for _, file := range t.Files() {
+		if file.Path() == fp {
+			f = file
+			break
+		}
+	}
+
+	if f == nil {
+		return fmt.Errorf("could not find file [%s]", fp)
+	}
+
+	// normal should start the torrent file
+	f.SetPriority(torrent.PiecePriorityNormal)
+
+	return nil
+}
+
+// stop a specific file download
+func (c *Client) StopFile(infohash metainfo.Hash, fp string) error {
+	fp = filepath.ToSlash(fp)
+	if fp == "" {
+		return fmt.Errorf("Path cannot be empty")
+	}
+
+	t, ok := c.TorrentClient.Torrent(infohash)
+	if !ok {
+		return fmt.Errorf("error finding torrent with infohash [%s]", t.InfoHash().AsString())
+	}
+
+	var f *torrent.File
+	for _, file := range t.Files() {
+		if file.Path() == fp {
+			f = file
+			break
+		}
+	}
+
+	if f == nil {
+		return fmt.Errorf("could not find file [%s]", fp)
+	}
+
+	// None should stop the torrent file
+	f.SetPriority(torrent.PiecePriorityNone)
+
+	return nil
+}
+
 // returns a slice of loaded torrents or nil
 func (c *Client) ShowTorrents() []*torrent.Torrent {
 	return c.TorrentClient.Torrents()
@@ -82,6 +186,19 @@ func (c *Client) AddTorrent(tor string) (*torrent.Torrent, error) {
 	} else {
 		return c.AddTorrentFile(tor)
 	}
+}
+
+// TODO: flesh this out and move to spec.go file
+func (c *Client) AddTorrentFromSpec(spec *torrent.TorrentSpec, dontStart bool) error {
+	t, new, err := c.TorrentClient.AddTorrentSpec(spec)
+	if err != nil {
+		return fmt.Errorf("error adding torrent from spec: %v")
+	}
+	if !new {
+		return fmt.Errorf("torrent with infohash [%s] is not new", spec.InfoHash.AsString())
+	}
+	t.Seeding()
+	return nil
 }
 
 // add a torrent from a magnet link
@@ -178,6 +295,7 @@ func (c *Client) FindByInfoHhash(infoHash string) (*torrent.Torrent, error) {
 	return nil, fmt.Errorf("No torrents match info hash: %v", infoHash)
 }
 
+// drop a torrent entirely
 func (c *Client) DropTorrent(t *torrent.Torrent) {
 	t.Drop()
 }

@@ -103,11 +103,10 @@ func Veri(t *torrent.Torrent) string {
 }
 
 // returns a seed ratio compared to the entire torrent
-func TorrentRatio(t *torrent.Torrent) float64 {
+func TorrentSeedRatio(t *torrent.Torrent) float64 {
 	stats := t.Stats()
-	upload := stats.BytesWritten.Int64()
-	// return float64(t.Length()) / float64(upload)
-	return float64(upload) / float64(t.Length())
+	seedratio := float64(stats.BytesWrittenData.Int64()) / float64(stats.BytesReadData.Int64())
+	return seedratio
 }
 
 // returns a seed ratio compared to the amount of data the user downloaded

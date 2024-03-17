@@ -13,7 +13,7 @@ type State struct {
 	hash     string
 }
 
-func (c *Client) Save() error {
+func (c *Client) SaveState() error {
 	ts := c.ShowTorrents()
 	if ts == nil {
 		return fmt.Errorf("no torrents found")

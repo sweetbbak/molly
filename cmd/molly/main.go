@@ -32,11 +32,11 @@ func molly() error {
 		println("\x1b[2J\x1b[H")
 		fmt.Printf("\n%s\n", p)
 
-		r := tor.TorrentRatio(t)
+		r := tor.TorrentSeedRatio(t)
 		pr := tor.TorrentPercentage(t)
 		rd := tor.TorrentRatioFromDownload(t)
 
-		fmt.Printf("\n\nration [ %f ] (%f) (%f)\n", r, pr, rd)
+		fmt.Printf("\n\nratio [ %f ] (%f) (%f)\n", r, pr, rd)
 		time.Sleep(time.Millisecond * 99)
 	}
 	return nil
