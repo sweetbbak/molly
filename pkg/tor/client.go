@@ -27,8 +27,6 @@ type Client struct {
 	ListenAddr string
 	// client
 	TorrentClient *torrent.Client
-	// slice of torrents
-	// Torrents []*torrent.Torrent
 	// use IPV4
 	DisableIPV6 bool
 }
@@ -186,19 +184,6 @@ func (c *Client) AddTorrent(tor string) (*torrent.Torrent, error) {
 	} else {
 		return c.AddTorrentFile(tor)
 	}
-}
-
-// TODO: flesh this out and move to spec.go file
-func (c *Client) AddTorrentFromSpec(spec *torrent.TorrentSpec, dontStart bool) error {
-	t, new, err := c.TorrentClient.AddTorrentSpec(spec)
-	if err != nil {
-		return fmt.Errorf("error adding torrent from spec: %v")
-	}
-	if !new {
-		return fmt.Errorf("torrent with infohash [%s] is not new", spec.InfoHash.AsString())
-	}
-	t.Seeding()
-	return nil
 }
 
 // add a torrent from a magnet link

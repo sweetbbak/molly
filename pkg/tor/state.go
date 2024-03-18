@@ -5,12 +5,25 @@ import (
 	"fmt"
 	"os"
 	"path"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 type State struct {
-	seeding  bool
-	complete bool
-	hash     string
+	infohash       string
+	seeding        bool
+	BytesCompleted int64
+	BytesMissing   int64
+	Length         int64
+	State          string
+	complete       bool
+	hash           string
+}
+
+func (c *Client) RecoverState(infohash metainfo.Hash) error {
+	c.AddTorrentFromSpec(&torrent.TorrentSpec{InfoHash: infohash}, true)
+	return nil
 }
 
 func (c *Client) SaveState() error {
