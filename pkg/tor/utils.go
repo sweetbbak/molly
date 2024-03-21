@@ -8,6 +8,15 @@ import (
 	"strconv"
 )
 
+func getHome() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return home, nil
+}
+
 // getAvailablePort returns an available port by listening on a random port and extracting the chosen port.
 func getAvailablePort() (int, error) {
 	listener, err := net.Listen("tcp", "localhost:0")
