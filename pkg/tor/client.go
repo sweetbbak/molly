@@ -21,7 +21,7 @@ type Client struct {
 	// directory to store sqlite torrent data
 	DataDir string
 	// actual place to store torrents
-	Download string
+	DownloadDir string
 	// internal torrent port
 	TorrentPort int
 	// listen address and port
@@ -37,7 +37,7 @@ func NewClient() *Client {
 	return &Client{}
 }
 
-// Initialize the torrent client with sensible defaults
+// Initialize the torrent client with defaults
 func NewDefaultClient() *Client {
 	return &Client{
 		DisableIPV6: false,
@@ -70,7 +70,21 @@ func (c *Client) NewSession() error {
 	return nil
 }
 
-func (c *Client) ConfigureStorage() {
+// func (c *Client) ConfigureStorage() {
+// }
+
+// set the metadata location to a default directory. Torrents should be configured separately
+func (c *Client) SetMetadataLocation(metadataDir string) storage.PieceCompletion {
+	mstor, err := storage.NewDefaultPieceCompletionForDir(metadataDir)
+	if err != nil {
+		log.Println(err)
+	}
+	return mstor
+}
+
+func (c *Client) SetDefaultDownloadLocation(downloadDir string, mstor storage.PieceCompletion) storage.ClientImpl {
+	tstor := storage.NewMMapWithCompletion(downloadDir, mstor)
+	return tstor
 }
 
 // getStorage returns a storage implementation that writes downloaded

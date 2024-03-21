@@ -21,6 +21,12 @@ type State struct {
 	hash           string
 }
 
+func (c *Client) AddTorrentToDB(t *torrent.Torrent) error {
+	return nil
+}
+
+func (c *Client) Simple(t *torrent.Torrent) error
+
 func (c *Client) RecoverState(infohash metainfo.Hash) error {
 	c.AddTorrentFromSpec(&torrent.TorrentSpec{InfoHash: infohash}, true)
 	return nil
