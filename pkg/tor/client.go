@@ -3,6 +3,7 @@ package tor
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -52,8 +53,10 @@ func (c *Client) NewSession() error {
 		return err
 	}
 
-	fmt.Println(c)
 	cfg.DisableIPv6 = c.DisableIPV6
+	cfg.Seed = true
+
+	// TODO: change this to storing metadata in data dir (~/.local/share) and torrents wherever the user wants
 
 	// cfg.SetListenAddr("localhost:42099")
 	cfg.DefaultStorage = storage.NewFileByInfoHash(c.DataDir)
@@ -65,6 +68,27 @@ func (c *Client) NewSession() error {
 
 	c.TorrentClient = client
 	return nil
+}
+
+func (c *Client) ConfigureStorage() {
+}
+
+// getStorage returns a storage implementation that writes downloaded
+// files to a user-defined directory, and writes metadata files to a
+// temporary directory.
+func (c *Client) getMetadataDir(metadataDir, downloadDir string) (storage.ClientImpl, error) {
+	mstor, err := storage.NewDefaultPieceCompletionForDir(metadataDir)
+	if err != nil {
+		log.Println(err)
+		return storage.NewMMap(downloadDir), nil
+	}
+
+	tstor := storage.NewMMapWithCompletion(downloadDir, mstor)
+	if err != nil {
+		return nil, err
+	}
+
+	return tstor, err
 }
 
 // stop a torrent with a given infohash
@@ -283,29 +307,4 @@ func (c *Client) FindByInfoHhash(infoHash string) (*torrent.Torrent, error) {
 // drop a torrent entirely
 func (c *Client) DropTorrent(t *torrent.Torrent) {
 	t.Drop()
-}
-
-// Create storage path if it doesn't exist and return Path
-func (c *Client) getStorage() (string, error) {
-	s, err := os.UserCacheDir()
-	if err != nil {
-		return "", fmt.Errorf("Client error, couldnt get user cache directory: %v", err)
-	}
-
-	p := path.Join(s, c.Name)
-	if p == "" || c.Name == "" {
-		return "", fmt.Errorf("Client error, couldnt construct client path: Empty path or project name")
-	}
-
-	err = os.MkdirAll(p, 0o755)
-	if err != nil {
-		return "", fmt.Errorf("Client error, couldnt create project directory: %v", err)
-	}
-
-	_, err = os.Stat(p)
-	if err == nil {
-		return p, nil
-	} else {
-		return "", err
-	}
 }
