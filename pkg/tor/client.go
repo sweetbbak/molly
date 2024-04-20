@@ -229,13 +229,28 @@ func (c *Client) ShowTorrents() []*torrent.Torrent {
 }
 
 // generic add torrent function
+// handles magnet links, http links, local files and infohashes
 func (c *Client) AddTorrent(tor string) (*torrent.Torrent, error) {
 	if strings.HasPrefix(tor, "magnet") {
 		return c.AddMagnet(tor)
-	} else if strings.Contains(tor, "http") {
+	} else if strings.HasPrefix(tor, "http") {
 		return c.AddTorrentURL(tor)
-	} else {
+	} else if filepathExists(tor) {
 		return c.AddTorrentFile(tor)
+	} else {
+		return c.AddInfohash(tor)
+	}
+}
+
+func (c *Client) AddInfohash(ihash string) (*torrent.Torrent, error) {
+	ih := metainfo.NewHashFromHex(ihash)
+	t, new := c.TorrentClient.AddTorrentInfoHash(ih)
+	if !new {
+		return t, nil
+	} else if t != nil {
+		return t, nil
+	} else {
+		return nil, fmt.Errorf("error adding torrent from infohash [%s]", ihash)
 	}
 }
 

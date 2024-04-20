@@ -8,6 +8,15 @@ import (
 	"strconv"
 )
 
+func filepathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		return true
+	} else {
+		return false
+	}
+}
+
 func getHome() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
