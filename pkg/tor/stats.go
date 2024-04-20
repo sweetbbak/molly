@@ -119,7 +119,10 @@ func TorrentSeedRatio(t *torrent.Torrent) float64 {
 func TorrentRatioFromDownload(t *torrent.Torrent) float64 {
 	stats := t.Stats()
 	upload := stats.BytesWritten.Int64()
-	return float64(t.BytesCompleted()) / float64(upload)
+	// return float64(t.BytesCompleted()) / float64(upload)
+	return float64(upload) / float64(t.BytesCompleted())
+
+	// return float64(t.BytesCompleted()) / float64(upload)
 }
 
 // get the downloaded percentage of a torrent

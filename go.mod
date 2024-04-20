@@ -4,8 +4,11 @@ go 1.21.7
 
 require (
 	github.com/anacrolix/torrent v1.55.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
+	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/jackc/pgx/v4 v4.18.3
+	github.com/jessevdk/go-flags v1.5.0
 	golang.org/x/net v0.21.0
 )
 
@@ -33,7 +36,6 @@ require (
 	github.com/bits-and-blooms/bitset v1.2.2 // indirect
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/go-llsqlite/adapter v0.0.0-20230927005056-7f5ce7f0c916 // indirect
 	github.com/go-llsqlite/crawshaw v0.4.0 // indirect

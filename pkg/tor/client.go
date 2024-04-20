@@ -1,6 +1,7 @@
 package tor
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
+	_ "modernc.org/sqlite"
 )
 
 type Client struct {
@@ -30,6 +32,8 @@ type Client struct {
 	TorrentClient *torrent.Client
 	// use IPV4
 	DisableIPV6 bool
+	// Torrent Database
+	db *sql.DB
 }
 
 // Initialize the torrent client

@@ -8,11 +8,17 @@ import (
 	"path/filepath"
 	"time"
 
-	"molly/pkg/pbar"
+	// "molly/pkg/pbar"
+	"molly/pkg/mydb"
 	"molly/pkg/tor"
 
+	"github.com/anacrolix/torrent/metainfo"
 	"golang.org/x/net/context"
 )
+
+func restartTorrent(ih metainfo.Hash, client *tor.Client) {
+	client.TorrentClient.AddTorrentInfoHash(ih)
+}
 
 func molly() error {
 	client := tor.NewClient()
@@ -29,20 +35,44 @@ func molly() error {
 	}
 
 	t.DownloadAll()
-	// 1465 or 4262 or 945
-	for !t.Complete.Bool() {
-		// vv := tor.Veri(t)
-		p := pbar.PieceBar2(t)
-		println("\x1b[2J\x1b[H")
-		fmt.Printf("\n%s\n", p)
 
+	if !mydb.Exists(t.InfoHash()) {
+		fmt.Printf("torrent doesnt exist, adding it now: %s", t.InfoHash().String())
+		err = mydb.Add(t.InfoHash())
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Printf("torrent exists, starting: %s", t.InfoHash().String())
+		if mydb.HasStarted(t.InfoHash().String()) {
+			restartTorrent(t.InfoHash(), client)
+		}
+	}
+
+	for !t.Complete.Bool() {
 		r := tor.TorrentSeedRatio(t)
 		pr := tor.TorrentPercentage(t)
 		rd := tor.TorrentRatioFromDownload(t)
 
-		fmt.Printf("\n\nratio [ %f ] (%f) (%f)\n", r, pr, rd)
+		println("\x1b[2J\x1b[H")
+		fmt.Printf("\n\nratio [ %.1f ] percentage (%.1f) ratio_from_dl (%.1f)\n", r, pr, rd)
 		time.Sleep(time.Millisecond * 99)
 	}
+
+	// // 1465 or 4262 or 945
+	// for !t.Complete.Bool() {
+	// 	// vv := tor.Veri(t)
+	// 	p := pbar.PieceBar2(t)
+	// 	println("\x1b[2J\x1b[H")
+	// 	fmt.Printf("\n%s\n", p)
+	//
+	// 	r := tor.TorrentSeedRatio(t)
+	// 	pr := tor.TorrentPercentage(t)
+	// 	rd := tor.TorrentRatioFromDownload(t)
+	//
+	// 	fmt.Printf("\n\nratio [ %f ] (%f) (%f)\n", r, pr, rd)
+	// 	time.Sleep(time.Millisecond * 99)
+	// }
 	return nil
 }
 
@@ -78,9 +108,9 @@ func breaker(cancel context.CancelFunc) {
 }
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	go breaker(cancel)
-	testWatch(ctx)
+	if err := Start(); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := molly(); err != nil {
 		log.Fatal(err)
