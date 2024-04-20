@@ -60,6 +60,11 @@ func (c *Client) NewSession() error {
 	cfg.DisableIPv6 = c.DisableIPV6
 	cfg.Seed = true
 
+	sqlPath := filepath.Join(c.DataDir, "molly.sqlite")
+	if err := c.DatabaseInit(sqlPath); err != nil {
+		return fmt.Errorf("error initializing torrent database: %s", err)
+	}
+
 	// TODO: change this to storing metadata in data dir (~/.local/share) and torrents wherever the user wants
 
 	// cfg.SetListenAddr("localhost:42099")
@@ -115,10 +120,16 @@ func (c *Client) StopTorrent(infohash metainfo.Hash) error {
 	if !ok {
 		return fmt.Errorf("error finding torrent with infohash [%s]", t.InfoHash().AsString())
 	}
+
 	if t.Info() != nil {
 		t.CancelPieces(0, t.NumPieces())
 	} else {
 		return fmt.Errorf("torrent cannot be stopped, missing torrent metainfo for infohash [%s]", t.InfoHash().AsString())
+	}
+
+	err := c.DBSetStopped(t.InfoHash(), true)
+	if err != nil {
+		return fmt.Errorf("error at StopTorrent while updating database: %s", err)
 	}
 	return nil
 }
@@ -234,7 +245,21 @@ func (c *Client) AddMagnet(magnet string) (*torrent.Torrent, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	<-t.GotInfo()
+
+	err = c.DBAdd(t.InfoHash())
+	if err != nil {
+		return t, fmt.Errorf("error at StopTorrent while updating database: %s", err)
+	}
+
+	err = c.DBStart(t.InfoHash())
+	if err != nil {
+		return t, fmt.Errorf("error at StopTorrent while updating database: %s", err)
+	}
+
+	t.DownloadAll()
+
 	return t, nil
 }
 
@@ -245,6 +270,12 @@ func (c *Client) AddTorrentFile(file string) (*torrent.Torrent, error) {
 		return nil, err
 	}
 	<-t.GotInfo()
+
+	err = c.DBAdd(t.InfoHash())
+	if err != nil {
+		return t, fmt.Errorf("error at StopTorrent while updating database: %s", err)
+	}
+
 	return t, nil
 }
 
@@ -276,6 +307,12 @@ func (c *Client) AddTorrentURL(url string) (*torrent.Torrent, error) {
 		return nil, err
 	}
 	<-t.GotInfo()
+
+	err = c.DBAdd(t.InfoHash())
+	if err != nil {
+		return t, fmt.Errorf("error at StopTorrent while updating database: %s", err)
+	}
+
 	return t, nil
 }
 
@@ -300,6 +337,12 @@ func (c *Client) AddTorrentsFromDir(dir string) ([]*torrent.Torrent, error) {
 			return nil, err
 		}
 		<-t.GotInfo()
+
+		err = c.DBAdd(t.InfoHash())
+		if err != nil {
+			log.Println("AddTorrentsFromDir: unable to add torrent to database: %s", err)
+		}
+
 		ts = append(ts, t)
 	}
 	return ts, nil
@@ -325,4 +368,5 @@ func (c *Client) FindByInfoHhash(infoHash string) (*torrent.Torrent, error) {
 // drop a torrent entirely
 func (c *Client) DropTorrent(t *torrent.Torrent) {
 	t.Drop()
+	c.DBDelete(t.InfoHash())
 }

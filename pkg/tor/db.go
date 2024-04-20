@@ -11,10 +11,6 @@ import (
 	// "github.com/anacrolix/torrent/storage"
 )
 
-type TorrentDB struct {
-	db *sql.DB
-}
-
 type Torrent struct {
 	Infohash  metainfo.Hash
 	Started   bool
