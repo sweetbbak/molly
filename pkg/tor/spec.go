@@ -15,7 +15,7 @@ import (
 func (c *Client) AddTorrentFromSpec(spec *torrent.TorrentSpec, dontStart bool) error {
 	t, new, err := c.TorrentClient.AddTorrentSpec(spec)
 	if err != nil {
-		return fmt.Errorf("error adding torrent from spec: %v")
+		return fmt.Errorf("error adding torrent from spec: %v", t.Name())
 	}
 
 	if !new {

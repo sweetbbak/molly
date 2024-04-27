@@ -62,7 +62,7 @@ func (c *Client) NewSession() error {
 
 	sqlPath := filepath.Join(c.DataDir, "molly.sqlite")
 	if err := c.DatabaseInit(sqlPath); err != nil {
-		return fmt.Errorf("error initializing torrent database: %s", err)
+		return fmt.Errorf("error initializing torrent database: %v", err)
 	}
 
 	// TODO: change this to storing metadata in data dir (~/.local/share) and torrents wherever the user wants
@@ -335,7 +335,7 @@ func (c *Client) AddTorrentURL(url string) (*torrent.Torrent, error) {
 func (c *Client) AddTorrentsFromDir(dir string) ([]*torrent.Torrent, error) {
 	_, err := os.Stat(dir)
 	if err != nil {
-		return nil, fmt.Errorf("directory [%s] stat error: %v", err)
+		return nil, fmt.Errorf("directory [%s] stat error: %v", dir, err)
 	}
 	dir = fmt.Sprintf("%s/*.torrent", dir)
 
@@ -355,7 +355,7 @@ func (c *Client) AddTorrentsFromDir(dir string) ([]*torrent.Torrent, error) {
 
 		err = c.DBAdd(t.InfoHash())
 		if err != nil {
-			log.Println("AddTorrentsFromDir: unable to add torrent to database: %s", err)
+			log.Printf("AddTorrentsFromDir: unable to add torrent to database: %v\n", err)
 		}
 
 		ts = append(ts, t)
