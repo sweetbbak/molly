@@ -27,6 +27,9 @@ func TestParseIndices(t *testing.T) {
 		{"1,0,3,", []int{0, 1, 3}},
 		{"100-1", []int{}},
 		{"x,y,z", []int{}},
+		{"-1", []int{}},
+		{"----10000", []int{}},
+		{"-1--198", []int{}},
 	}
 
 	for _, tt := range tests {

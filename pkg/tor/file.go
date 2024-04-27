@@ -12,7 +12,44 @@ import (
 
 // takes a slice of indexes for files to be added
 func (c *Client) SelectFileByIndex(t *torrent.Torrent, idxs []int) error {
+	files := t.Files()
+	for _, i := range idxs {
+		if i > len(files) {
+			return fmt.Errorf("file index out of range: index [%d] of file count [%d]\n", i, len(files))
+		}
+
+		x := files[i]
+		x.Download()
+	}
+
 	return nil
+}
+
+func (c *Client) Info(tor string, client *torrent.Client) error {
+	t, err := c.AddTorrent(tor)
+	if err != nil {
+		return err
+	}
+
+	printInfo(t)
+
+	if !c.DBExists(t.InfoHash()) {
+		t.Drop()
+	}
+
+	return nil
+}
+
+func printInfo(t *torrent.Torrent) {
+	info := t.Info()
+	files := t.Files()
+	sz := info.TotalLength()
+	psz := prettyByteSize(int(sz))
+	fmt.Printf("%s\n", psz)
+
+	for i, f := range files {
+		fmt.Printf("%d | %s\n", i, f.DisplayPath())
+	}
 }
 
 // remove duplicate entries from slice
@@ -63,6 +100,10 @@ func ParseIndices(s string) ([]int, error) {
 				return idxs, err
 			}
 
+			if n1 < 0 || n2 < 0 {
+				return idxs, fmt.Errorf("file index cannot be negative, got range [%d] [%d]", n1, n2)
+			}
+
 			// TODO: check if this range is inclusive or not
 			for x := n1; x <= n2; x++ {
 				idxs = append(idxs, x)
@@ -72,6 +113,11 @@ func ParseIndices(s string) ([]int, error) {
 			if err != nil {
 				return idxs, err
 			}
+
+			if n < 0 {
+				return idxs, fmt.Errorf("file index cannot be negative, got [%d]", n)
+			}
+
 			idxs = append(idxs, n)
 		}
 	}
