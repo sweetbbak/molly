@@ -268,6 +268,23 @@ func (c *Client) AddMagnet(magnet string) (*torrent.Torrent, error) {
 		return t, fmt.Errorf("error at StopTorrent while updating database: %s", err)
 	}
 
+	return t, nil
+}
+
+// add a torrent from a magnet link
+func (c *Client) AddMagnetStart(magnet string) (*torrent.Torrent, error) {
+	t, err := c.TorrentClient.AddMagnet(magnet)
+	if err != nil {
+		return nil, err
+	}
+
+	<-t.GotInfo()
+
+	err = c.DBAdd(t.InfoHash())
+	if err != nil {
+		return t, fmt.Errorf("error at StopTorrent while updating database: %s", err)
+	}
+
 	err = c.DBStart(t.InfoHash())
 	if err != nil {
 		return t, fmt.Errorf("error at StopTorrent while updating database: %s", err)
