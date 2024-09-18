@@ -32,45 +32,66 @@ var builtinAnnounceList = [][]string{
 	{"udp://tracker.openbittorrent.com:6969/announce"},
 }
 
+func init() {
+	args.PieceLength = "2mb"
+}
+
 func Mktorrent() error {
-	bs, err := bytesize.Parse(args.PieceLength)
-	if err != nil {
-		return err
+	var pl int64
+	if args.PieceLength != "" {
+		bs, err := bytesize.Parse(args.PieceLength)
+		if err != nil {
+			return err
+		}
+
+		pl = int64(bs)
+	} else {
+		pl = 2097152
 	}
-	pl := int64(bs)
+
+	fmt.Printf("bs: %v\n", pl)
 
 	mi := metainfo.MetaInfo{
 		AnnounceList: builtinAnnounceList,
 	}
+
 	if args.EmptyAnnounceList {
 		mi.AnnounceList = make([][]string, 0)
 	}
+
 	for _, a := range args.AnnounceList {
 		mi.AnnounceList = append(mi.AnnounceList, []string{a})
 	}
+
 	mi.SetDefaults()
 	if len(args.Comment) > 0 {
 		mi.Comment = args.Comment
 	}
+
 	if len(args.CreatedBy) > 0 {
 		mi.CreatedBy = args.CreatedBy
 	}
+
 	mi.UrlList = args.Url
 
 	info := metainfo.Info{
 		// PieceLength: pl,
 		Private: args.Private,
 	}
+
 	if args.PieceLength != "" {
 		info.PieceLength = pl
 	}
-	err = info.BuildFromFilePath(args.Root)
+
+	err := info.BuildFromFilePath(args.Root)
 	if err != nil {
 		return err
 	}
+
 	if args.InfoName != nil {
 		info.Name = *args.InfoName
 	}
+
 	mi.InfoBytes, err = bencode.Marshal(info)
 	if err != nil {
 		return err
@@ -81,23 +102,28 @@ func Mktorrent() error {
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		err = mi.Write(fi)
 	} else {
 		err = mi.Write(os.Stdout)
 	}
+
 	err = pprintMetainfo(&mi)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return nil
 }
 
+// print torrent info
 func pprintMetainfo(metainfo *metainfo.MetaInfo) error {
 	info, err := metainfo.UnmarshalInfo()
 	if err != nil {
 		return fmt.Errorf("error unmarshalling info: %s", err)
 	}
-	d := map[string]interface{}{
+
+	d := map[string]any{
 		"Name":         info.Name,
 		"Name.Utf8":    info.NameUtf8,
 		"NumPieces":    info.NumPieces(),
@@ -109,6 +135,7 @@ func pprintMetainfo(metainfo *metainfo.MetaInfo) error {
 		"AnnounceList": metainfo.AnnounceList,
 		"UrlList":      metainfo.UrlList,
 	}
+
 	if len(metainfo.Nodes) > 0 {
 		d["Nodes"] = metainfo.Nodes
 	}
@@ -132,6 +159,7 @@ func main() {
 	if flags.WroteHelp(err) {
 		os.Exit(0)
 	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
